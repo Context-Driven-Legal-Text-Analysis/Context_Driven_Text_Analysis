@@ -76,24 +76,65 @@ class EmbeddingWrapper:
         )
         return response.data[0].embedding
 
-def improved_get_relevant_chunks(user_question: str, docsearch: PineconeVectorStore, chunks: List[str], top_k: int = 3) -> List[str]:
+def improved_get_relevant_chunks(user_question: str, docsearch: PineconeVectorStore, chunks: List[str], top_k: int = 3):
+    debug_data = {}
+
+    # ===== query token breakdown =====
+    tokenized_query = user_question.split()
+    debug_data["query_tokens"] = tokenized_query
+
+    # ===== vector search =====
     vector_results = docsearch.similarity_search(user_question, k=top_k * 2)
     vector_chunks = [doc.page_content for doc in vector_results]
-    
+    debug_data["vector_search_matches"] = vector_chunks
+
+    # ===== BM25 search =====
     bm25 = BM25Okapi([doc.split() for doc in chunks])
-    tokenized_query = user_question.split()
     bm25_scores = bm25.get_scores(tokenized_query)
     top_bm25_indices = np.argsort(bm25_scores)[-top_k * 2:][::-1]
-    bm25_chunks = [chunks[i] for i in top_bm25_indices]
-    
+
+    bm25_debug = []
+    bm25_chunks = []
+
+    for idx in top_bm25_indices:
+        bm25_chunks.append(chunks[idx])
+        bm25_debug.append({
+            "chunk_preview": chunks[idx][:300],
+            "bm25_score": float(bm25_scores[idx])
+        })
+
+    debug_data["bm25_matches"] = bm25_debug
+
+    # ===== combine =====
     combined_chunks = list(dict.fromkeys(vector_chunks + bm25_chunks))
-    
+    debug_data["combined_before_rerank"] = combined_chunks
+
+    # ===== cross encoder rerank =====
     cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
     pairs = [(user_question, chunk) for chunk in combined_chunks]
     cross_encoder_scores = cross_encoder.predict(pairs)
-    
-    sorted_chunks = [chunk for _, chunk in sorted(zip(cross_encoder_scores, combined_chunks), reverse=True)]
-    return sorted_chunks[:top_k]
+
+    rerank_debug = []
+    for chunk, score in zip(combined_chunks, cross_encoder_scores):
+        rerank_debug.append({
+            "chunk_preview": chunk[:300],
+            "cross_score": float(score)
+        })
+
+    debug_data["cross_encoder_scores"] = rerank_debug
+
+    sorted_chunks = [
+        chunk for _, chunk in sorted(
+            zip(cross_encoder_scores, combined_chunks),
+            reverse=True
+        )
+    ]
+
+    final_chunks = sorted_chunks[:top_k]
+    debug_data["final_selected_chunks"] = final_chunks
+
+    return final_chunks, debug_data
+
 
 def semantic_chunking(text: str) -> List[str]:
     doc = nlp(text)
@@ -273,9 +314,10 @@ def query_vectors(index, vector, top_k=2, namespace="default", filter=None):
 
 def rewrite_query(client, model, original_query, rewrite_conversation_history):
     system_prompt = '''
-    You are an AI assistant tasked with reformulating user queries to improve retrieval in a RAG system. The RAG system has information about various documents.
-    Given the original query and the conversation history, rewrite it to be more specific, detailed, and likely to retrieve relevant information. Do not make up information that is not in the question, although you are free to add details if they were mentioned earlier in the conversation history.
-    Consider the context of the conversation when rewriting the query. You are rewriting the queries such that they can be used for semantic search in a RAG system whose information will be passed on to another LLM for response. Keep this in mind. Not every query needs rewriting; use your judgment on when to rewrite and when not to. ONLY give the rewritten query as output.
+    You are a document analysis assistant.Use ONLY the provided document chunks to answer.Extract and summarize relevant information from them.
+If information exists but is scattered across chunks,
+combine and present it clearly.Only say "Not found in document" if the chunks contain
+absolutely no relevant information.
     '''
 
     messages = [
@@ -458,19 +500,22 @@ def chat():
     rewritten_query, _ = rewrite_query(client, model, user_question, [])
 
     # retrieve chunks
-    relevant_chunks = improved_get_relevant_chunks(rewritten_query, docsearch, chunks)
+    relevant_chunks, debug_data = improved_get_relevant_chunks(
+        rewritten_query, docsearch, chunks
+    )
 
     # generate response (NO history)
     response = chatbot_response(client, model, user_question, relevant_chunks, [])
 
     # translate back
-    response = translate_response(response, detected_lang)
 
     return jsonify({
         "response": response,
         "rewritten_query": rewritten_query,
-        "retrieved_chunks": relevant_chunks
+        "retrieved_chunks": relevant_chunks,
+        "retrieval_debug": debug_data
     })
+
 
 if __name__ == "__main__":
     model = os.getenv("MODEL")

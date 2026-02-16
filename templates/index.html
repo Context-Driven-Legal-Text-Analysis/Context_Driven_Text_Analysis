@@ -1,586 +1,608 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocuAI - Intelligent Document Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #3f37c9;
-            --dark: #1a1a2e;
-            --light: #f8f9fa;
-            --gray: #6c757d;
-            --success: #4cc9f0;
-            --warning: #f8961e;
-            --danger: #f72585;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f5f7fb;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-        
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        .sidebar {
-            width: 280px;
-            background: white;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #e9ecef;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2rem;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--primary);
-        }
-        
-        .logo i {
-            margin-right: 0.75rem;
-            font-size: 1.5rem;
-        }
-        
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 8px;
-            color: var(--gray);
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-item:hover {
-            background-color: #f1f3ff;
-            color: var(--primary);
-        }
-        
-        .nav-item.active {
-            background-color: #e6f0ff;
-            color: var(--primary);
-            font-weight: 500;
-        }
-        
-        .nav-item i {
-            margin-right: 0.75rem;
-            font-size: 1.1rem;
-        }
-        
-        .upload-section {
-            margin-top: auto;
-            padding: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 12px;
-            border: 1px dashed #dee2e6;
-            text-align: center;
-        }
-        
-        .upload-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 1rem;
-        }
-        
-        .upload-btn:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .upload-btn i {
-            margin-right: 0.5rem;
-        }
-        
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 2rem;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .header h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .user-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .language-selector {
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            background-color: white;
-            font-family: inherit;
-        }
-        
-        .voice-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .voice-btn:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .voice-btn.recording {
-            animation: pulse 1.5s infinite;
-            background-color: var(--danger);
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
-        }
-        
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
-            overflow: hidden;
-        }
-        
-        .chat-messages {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-        
-        .message {
-            max-width: 80%;
-            padding: 1rem 1.25rem;
-            border-radius: 12px;
-            line-height: 1.5;
-            position: relative;
-        }
-        
-        .user-message {
-            align-self: flex-end;
-            background-color: var(--primary);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        
-        .ai-message {
-            align-self: flex-start;
-            background-color: #f8f9fa;
-            color: var(--dark);
-            border-bottom-left-radius: 4px;
-        }
-        
-        .message-time {
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-top: 0.5rem;
-            display: block;
-        }
-        
-        .input-container {
-            padding: 1rem;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            gap: 0.75rem;
-            background-color: white;
-        }
-        
-        .message-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            font-family: inherit;
-            resize: none;
-            height: 50px;
-            max-height: 150px;
-            transition: all 0.2s ease;
-        }
-        
-        .message-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-        }
-        
-        .send-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .send-btn:hover {
-            background-color: var(--primary-dark);
-        }
-        
-        .file-upload {
-            display: none;
-        }
-        
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-        
-        .typing-dots {
-            display: flex;
-            gap: 0.25rem;
-        }
-        
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--gray);
-            border-radius: 50%;
-            animation: typingAnimation 1.4s infinite ease-in-out;
-        }
-        
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typingAnimation {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
-            30% { transform: translateY(-5px); opacity: 1; }
-        }
-        
-        .document-preview {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }
-        
-        .document-preview h3 {
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
-            color: var(--dark);
-        }
-        
-        .document-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--gray);
-            font-size: 0.875rem;
-        }
-        
-        @media (max-width: 768px) {
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DocuAI - Intelligent Document Assistant</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            :root {
+                --primary: #4361ee;
+                --primary-dark: #3a56d4;
+                --secondary: #3f37c9;
+                --dark: #1a1a2e;
+                --light: #f8f9fa;
+                --gray: #6c757d;
+                --success: #4cc9f0;
+                --warning: #f8961e;
+                --danger: #f72585;
+            }
+            
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Inter', sans-serif;
+                background-color: #f5f7fb;
+                color: var(--dark);
+                line-height: 1.6;
+            }
+            
             .app-container {
-                flex-direction: column;
+                display: flex;
+                min-height: 100vh;
             }
             
             .sidebar {
-                width: 100%;
+                width: 280px;
+                background: white;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid #e9ecef;
+            }
+            
+            .logo {
+                display: flex;
+                align-items: center;
+                margin-bottom: 2rem;
+                font-weight: 700;
+                font-size: 1.25rem;
+                color: var(--primary);
+            }
+            
+            .logo i {
+                margin-right: 0.75rem;
+                font-size: 1.5rem;
+            }
+            
+            .nav-item {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                margin-bottom: 0.5rem;
+                border-radius: 8px;
+                color: var(--gray);
+                text-decoration: none;
+                transition: all 0.2s ease;
+            }
+            
+            .nav-item:hover {
+                background-color: #f1f3ff;
+                color: var(--primary);
+            }
+            
+            .nav-item.active {
+                background-color: #e6f0ff;
+                color: var(--primary);
+                font-weight: 500;
+            }
+            
+            .nav-item i {
+                margin-right: 0.75rem;
+                font-size: 1.1rem;
+            }
+            
+            .upload-section {
+                margin-top: auto;
                 padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: 12px;
+                border: 1px dashed #dee2e6;
+                text-align: center;
+            }
+            
+            .upload-btn {
+                display: inline-flex;
+                align-items: center;
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                margin-top: 1rem;
+            }
+            
+            .upload-btn:hover {
+                background-color: var(--primary-dark);
+            }
+            
+            .upload-btn i {
+                margin-right: 0.5rem;
             }
             
             .main-content {
-                padding: 1rem;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 2rem;
+            }
+            
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+            }
+            
+            .header h1 {
+                font-size: 1.75rem;
+                font-weight: 600;
+                color: var(--dark);
+            }
+            
+            .user-controls {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .language-selector {
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                border: 1px solid #dee2e6;
+                background-color: white;
+                font-family: inherit;
+            }
+            
+            .voice-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .voice-btn:hover {
+                background-color: var(--primary-dark);
+            }
+            
+            .voice-btn.recording {
+                animation: pulse 1.5s infinite;
+                background-color: var(--danger);
+            }
+            
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
+            }
+            
+            .chat-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background-color: white;
+                border-radius: 12px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+                overflow: hidden;
+            }
+            
+            .chat-messages {
+                flex: 1;
+                padding: 1.5rem;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
             }
             
             .message {
-                max-width: 90%;
+                max-width: 80%;
+                padding: 1rem 1.25rem;
+                border-radius: 12px;
+                line-height: 1.5;
+                position: relative;
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <div class="sidebar">
-            <div class="logo">
-                <i class="fas fa-robot"></i>
-                <span>DocuAI</span>
-            </div>
             
-            <a href="#" class="nav-item active">
-                <i class="fas fa-comments"></i>
-                <span>Chat</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-file-alt"></i>
-                <span>Documents</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-history"></i>
-                <span>History</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
+            .user-message {
+                align-self: flex-end;
+                background-color: var(--primary);
+                color: white;
+                border-bottom-right-radius: 4px;
+            }
             
-            <div class="upload-section">
-                <p>Upload documents to analyze</p>
-                <label for="file-upload" class="upload-btn">
-                    <i class="fas fa-upload"></i>
-                    <span>Upload File</span>
-                </label>
-                <input type="file" id="file-upload" class="file-upload" accept=".pdf,.docx,.pptx,.txt">
-            </div>
-        </div>
-        
-        <div class="main-content">
-            <div class="header">
-                <h1>Document Assistant</h1>
-                <div class="user-controls">
-                    <select class="language-selector" id="language-selector">
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="it">Italian</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="ru">Russian</option>
-                        <option value="zh">Chinese</option>
-                        <option value="ja">Japanese</option>
-                        <option value="ar">Arabic</option>
-                    </select>
-                    <button class="voice-btn" id="voice-btn">
-                        <i class="fas fa-microphone"></i>
-                    </button>
+            .ai-message {
+                align-self: flex-start;
+                background-color: #f8f9fa;
+                color: var(--dark);
+                border-bottom-left-radius: 4px;
+            }
+            
+            .message-time {
+                font-size: 0.75rem;
+                opacity: 0.7;
+                margin-top: 0.5rem;
+                display: block;
+            }
+            
+            .input-container {
+                padding: 1rem;
+                border-top: 1px solid #e9ecef;
+                display: flex;
+                gap: 0.75rem;
+                background-color: white;
+            }
+            
+            .message-input {
+                flex: 1;
+                padding: 0.75rem 1rem;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                font-family: inherit;
+                resize: none;
+                height: 50px;
+                max-height: 150px;
+                transition: all 0.2s ease;
+            }
+            
+            .message-input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            }
+            
+            .send-btn {
+                width: 50px;
+                height: 50px;
+                border-radius: 8px;
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .send-btn:hover {
+                background-color: var(--primary-dark);
+            }
+            
+            .file-upload {
+                display: none;
+            }
+            
+            .typing-indicator {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 1rem;
+                color: var(--gray);
+                font-size: 0.9rem;
+            }
+            
+            .typing-dots {
+                display: flex;
+                gap: 0.25rem;
+            }
+            
+            .typing-dot {
+                width: 8px;
+                height: 8px;
+                background-color: var(--gray);
+                border-radius: 50%;
+                animation: typingAnimation 1.4s infinite ease-in-out;
+            }
+            
+            .typing-dot:nth-child(1) { animation-delay: 0s; }
+            .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+            .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+            
+            @keyframes typingAnimation {
+                0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+                30% { transform: translateY(-5px); opacity: 1; }
+            }
+            
+            .document-preview {
+                margin-top: 1rem;
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .document-preview h3 {
+                margin-bottom: 0.5rem;
+                font-size: 1rem;
+                color: var(--dark);
+            }
+            
+            .document-info {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--gray);
+                font-size: 0.875rem;
+            }
+            
+            @media (max-width: 768px) {
+                .app-container {
+                    flex-direction: column;
+                }
+                
+                .sidebar {
+                    width: 100%;
+                    padding: 1rem;
+                }
+                
+                .main-content {
+                    padding: 1rem;
+                }
+                
+                .message {
+                    max-width: 90%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app-container">
+            <div class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>DocuAI</span>
+                </div>
+                
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-comments"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Documents</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>History</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                
+                <div class="upload-section">
+                    <p>Upload documents to analyze</p>
+                    <label for="file-upload" class="upload-btn">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload File</span>
+                    </label>
+                    <input type="file" id="file-upload" class="file-upload" accept=".pdf,.docx,.pptx,.txt">
                 </div>
             </div>
             
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages">
-                    <!-- Messages will be inserted here -->
-                    <div class="message ai-message">
-                        Hello! I'm your Document AI Assistant. Upload a document or ask me anything about your files.
-                        <span class="message-time">Just now</span>
+            <div class="main-content">
+                <div class="header">
+                    <h1>Document Assistant</h1>
+                    <div class="user-controls">
+                        <select class="language-selector" id="language-selector">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="ru">Russian</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ar">Arabic</option>
+                        </select>
+                        <button class="voice-btn" id="voice-btn">
+                            <i class="fas fa-microphone"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <div class="input-container">
-                    <textarea class="message-input" id="message-input" placeholder="Ask about your documents..." rows="1"></textarea>
-                    <button class="send-btn" id="send-btn">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <!-- Messages will be inserted here -->
+                        <div class="message ai-message">
+                            Hello! I'm your Document AI Assistant. Upload a document or ask me anything about your files.
+                            <span class="message-time">Just now</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-container">
+                        <textarea class="message-input" id="message-input" placeholder="Ask about your documents..." rows="1"></textarea>
+                        <button class="send-btn" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const messageInput = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
-    const chatMessages = document.getElementById('chat-messages');
-    const fileUpload = document.getElementById('file-upload');
-    const voiceBtn = document.getElementById('voice-btn');
-    const languageSelector = document.getElementById('language-selector');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const fileUpload = document.getElementById('file-upload');
+        const voiceBtn = document.getElementById('voice-btn');
+        const languageSelector = document.getElementById('language-selector');
 
-    let isRecording = false;
-    let targetLang = 'en';
+        let isRecording = false;
+        let targetLang = 'en';
 
-    messageInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = this.scrollHeight + 'px';
-    });
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
 
-    messageInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
 
-    sendBtn.addEventListener('click', sendMessage);
+        sendBtn.addEventListener('click', sendMessage);
 
-    fileUpload.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) uploadFile(file);
-    });
+        fileUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) uploadFile(file);
+        });
 
-    voiceBtn.addEventListener('click', toggleRecording);
+        voiceBtn.addEventListener('click', toggleRecording);
 
-    languageSelector.addEventListener('change', function() {
-        targetLang = this.value;
-    });
+        languageSelector.addEventListener('change', function() {
+            targetLang = this.value;
+        });
 
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message === '') return;
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === '') return;
 
-        addMessage(message, 'user');
-        messageInput.value = '';
-        messageInput.style.height = '50px';
-        showTypingIndicator();
+            addMessage(message, 'user');
+            messageInput.value = '';
+            messageInput.style.height = '50px';
+            showTypingIndicator();
 
-        axios.post('/chat', {
-            message: message,
-            target_lang: targetLang
-        })
-        .then(res => {
-            hideTypingIndicator();
+            axios.post('/chat', {
+                message: message,
+                target_lang: targetLang
+            })
+            .then(res => {
+                hideTypingIndicator();
 
-            const aiText = res.data.response;
-            const rewritten = res.data.rewritten_query;
-            const chunks = res.data.retrieved_chunks || [];
+                const aiText = res.data.response;
+                const rewritten = res.data.rewritten_query;
+                const chunks = res.data.retrieved_chunks || [];
+                const dbg = res.data.retrieval_debug || {};
 
             let debugHTML = `
             <div style="margin-top:12px;padding:12px;background:#eef2ff;border-radius:10px;font-size:13px">
+
             <b>Search Query Used:</b><br>${rewritten}<br><br>
-            <b>Retrieved Context:</b><br>`;
 
-            chunks.forEach((c,i)=>{
-                debugHTML += `
-                <div style="margin-top:8px;padding:8px;background:white;border:1px solid #ddd;border-radius:8px">
-                <b>Chunk ${i+1}</b><br>${c}
-                </div>`;
-            });
+            <b>Query Tokens:</b><br>
+            ${(dbg.query_tokens || []).join(", ")}<br><br>
 
-            debugHTML += `</div>`;
+            <b>Vector Matches:</b><br>
+            ${(dbg.vector_search_matches || []).map(c =>
+            `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">${c}</div>`
+            ).join("")}
 
-            addMessage(aiText + debugHTML, 'ai');
-        })
-        .catch(err=>{
-            hideTypingIndicator();
-            addMessage("Error generating response", 'ai');
-            console.error(err);
-        });
-    }
+            <br><b>BM25 Ranking:</b><br>
+            ${(dbg.bm25_matches || []).map(m =>
+            `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">
+            Score: ${m.bm25_score}<br>${m.chunk_preview}
+            </div>`
+            ).join("")}
 
-    function uploadFile(file) {
-        const formData = new FormData();
-        formData.append('file', file);
+            <br><b>Cross-Encoder Rerank:</b><br>
+            ${(dbg.cross_encoder_scores || []).map(m =>
+            `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">
+            Score: ${m.cross_score}<br>${m.chunk_preview}
+            </div>`
+            ).join("")}
 
-        addMessage(`Uploading ${file.name}...`, 'ai');
+            <br><b>Final Selected Chunks:</b><br>
+            ${(dbg.final_selected_chunks || []).map(c =>
+            `<div style="margin-bottom:6px;padding:6px;background:#dbeafe;border-radius:6px">${c}</div>`
+            ).join("")}
 
-        axios.post('/upload', formData, {
-            headers:{'Content-Type':'multipart/form-data'}
-        })
-        .then(()=>{
-            addMessage(`${file.name} indexed. Ask questions now.`, 'ai');
-        })
-        .catch(()=>{
-            addMessage(`Upload failed`, 'ai');
-        });
-    }
+            </div>`;
 
-    function toggleRecording() {
-        if (isRecording) {
-            isRecording = false;
-            voiceBtn.classList.remove('recording');
-            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-            axios.post('/stop_recording');
-        } else {
-            isRecording = true;
-            voiceBtn.classList.add('recording');
-            voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
 
-            axios.post('/start_recording',{language:targetLang})
-            .then(res=>{
-                if(res.data.success) messageInput.value = res.data.text;
-                resetMic();
+                addMessage(aiText + debugHTML, 'ai');
             })
-            .catch(resetMic);
+            .catch(err=>{
+                hideTypingIndicator();
+                addMessage("Error generating response", 'ai');
+                console.error(err);
+            });
         }
-    }
 
-    function resetMic(){
-        isRecording=false;
-        voiceBtn.classList.remove('recording');
-        voiceBtn.innerHTML='<i class="fas fa-microphone"></i>';
-    }
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
 
-    function addMessage(text, sender){
-        const div = document.createElement('div');
-        div.className = `message ${sender}-message`;
+            addMessage(`Uploading ${file.name}...`, 'ai');
 
-        const now = new Date();
-        const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            axios.post('/upload', formData, {
+                headers:{'Content-Type':'multipart/form-data'}
+            })
+            .then(()=>{
+                addMessage(`${file.name} indexed. Ask questions now.`, 'ai');
+            })
+            .catch(()=>{
+                addMessage(`Upload failed`, 'ai');
+            });
+        }
 
-        div.innerHTML = `${text}<span class="message-time">${time}</span>`;
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+        function toggleRecording() {
+            if (isRecording) {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                axios.post('/stop_recording');
+            } else {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
 
-    function showTypingIndicator(){
-        const t = document.createElement('div');
-        t.className='typing-indicator';
-        t.id='typing-indicator';
-        t.innerHTML=`DocuAI thinking...`;
-        chatMessages.appendChild(t);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+                axios.post('/start_recording',{language:targetLang})
+                .then(res=>{
+                    if(res.data.success) messageInput.value = res.data.text;
+                    resetMic();
+                })
+                .catch(resetMic);
+            }
+        }
 
-    function hideTypingIndicator(){
-        const t=document.getElementById('typing-indicator');
-        if(t) t.remove();
-    }
+        function resetMic(){
+            isRecording=false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.innerHTML='<i class="fas fa-microphone"></i>';
+        }
 
-});
-</script>
+        function addMessage(text, sender){
+            const div = document.createElement('div');
+            div.className = `message ${sender}-message`;
 
-</body>
-</html>
+            const now = new Date();
+            const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+            div.innerHTML = `${text}<span class="message-time">${time}</span>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator(){
+            const t = document.createElement('div');
+            t.className='typing-indicator';
+            t.id='typing-indicator';
+            t.innerHTML=`DocuAI thinking...`;
+            chatMessages.appendChild(t);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator(){
+            const t=document.getElementById('typing-indicator');
+            if(t) t.remove();
+        }
+
+    });
+    </script>
+
+    </body>
+    </html>
