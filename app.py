@@ -29,6 +29,12 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
+# create uploads folder ALWAYS
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_PATH = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_PATH, exist_ok=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_PATH
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -297,22 +303,27 @@ def rewrite_query(client, model, original_query, rewrite_conversation_history):
 
 def chatbot_response(client, model, user_question, relevant_chunks, conversation_history):
     system_prompt = '''
-    You are an AI assistant tasked with generating responses based on user questions and relevant information chunks. 
-    The information chunks are related to various documents. Use the provided chunks to generate a detailed and accurate response to the user's question. 
-    Ensure that the response is relevant and informative, and avoid making up information that is not present in the chunks.
-    '''
+You are an AI assistant. Answer ONLY using provided document chunks.
+If answer not in chunks, say: "Not found in document".
+'''
 
     messages = [
         {"role": "system", "content": system_prompt},
-        *conversation_history,
-        {"role": "user", "content": f"User question: {user_question}\n\nRelevant chunks: {relevant_chunks}\n\nResponse:"}
+        {"role": "user", "content": f"""
+Question: {user_question}
+
+Context from document:
+{relevant_chunks}
+
+Answer:
+"""}
     ]
 
     response = client.chat.completions.create(
         model=model,
         messages=messages,
-        max_tokens=8000,
-        temperature=0.3
+        max_tokens=2000,
+        temperature=0.2
     )
 
     chatbot_response = response.choices[0].message.content
@@ -439,35 +450,27 @@ def upload_file():
 @app.route('/chat', methods=['POST'])
 def chat():
     user_question = request.json['message']
-    conversation_history = request.json.get('conversation_history', [])
-    rewrite_conversation_history = request.json.get('rewrite_conversation_history', [])
-    target_lang = request.json.get('target_lang', 'en')
 
-    # Translate user question to English if necessary
+    # translate to english
     user_question, detected_lang = translate_to_english(user_question)
 
-    # Rewrite the query
-    rewritten_query, rewrite_conversation_history = rewrite_query(client, model, user_question, rewrite_conversation_history)
-    logger.info(f"Rewritten query: {rewritten_query}")
+    # rewrite query (optional but useful for retrieval)
+    rewritten_query, _ = rewrite_query(client, model, user_question, [])
 
-    # Get relevant chunks using the improved retrieval method
+    # retrieve chunks
     relevant_chunks = improved_get_relevant_chunks(rewritten_query, docsearch, chunks)
-    
-    # Generate response using the original question and relevant chunks
-    response = chatbot_response(client, model, user_question, relevant_chunks, conversation_history)
 
-    # Translate response back to the target language
+    # generate response (NO history)
+    response = chatbot_response(client, model, user_question, relevant_chunks, [])
+
+    # translate back
     response = translate_response(response, detected_lang)
 
-    # Update conversation history
-    conversation_history.append({"role": "user", "content": user_question})
-    conversation_history.append({"role": "assistant", "content": response})
-
-    # Limit conversation history to last 15 exchanges (30 messages)
-    if len(conversation_history) > 30:
-        conversation_history = conversation_history[-30:]
-
-    return jsonify({'response': response, 'conversation_history': conversation_history, 'rewrite_conversation_history': rewrite_conversation_history})
+    return jsonify({
+        "response": response,
+        "rewritten_query": rewritten_query,
+        "retrieved_chunks": relevant_chunks
+    })
 
 if __name__ == "__main__":
     model = os.getenv("MODEL")
