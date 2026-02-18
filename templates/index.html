@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -349,6 +349,53 @@
                     max-width: 90%;
                 }
             }
+
+            /* ── ADDITION 1: Metrics styles appended here, nothing above changed ── */
+            .metrics-panel { margin-top: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); overflow: hidden; }
+            .metrics-hdr { display:flex; justify-content:space-between; align-items:center; padding:.85rem 1.25rem; background:#f8f9fa; border-bottom:1px solid #e9ecef; cursor:pointer; user-select:none; }
+            .metrics-hdr h3 { font-size:.9rem; font-weight:600; display:flex; align-items:center; gap:.5rem; }
+            .m-live-dot { width:8px; height:8px; background:#22c55e; border-radius:50%; display:inline-block; animation:mblink 1.4s infinite; }
+            @keyframes mblink { 0%,100%{opacity:1} 50%{opacity:.3} }
+            .metrics-body { padding:1rem 1.25rem; display:none; }
+            .metrics-body.open { display:block; }
+            .m-chev { font-size:.75rem; color:var(--gray); transition:transform .2s; }
+            .m-chev.open { transform:rotate(180deg); }
+            .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:.75rem; margin-bottom:1rem; }
+            .kpi-card { border-radius:8px; padding:.75rem; border:1px solid #e9ecef; background:#f8f9fa; position:relative; }
+            .kpi-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 8px 8px; background:#e9ecef; }
+            .kpi-card.pass::after { background:#22c55e; }
+            .kpi-card.fail::after { background:var(--danger); }
+            .kpi-label { font-size:.65rem; color:var(--gray); text-transform:uppercase; letter-spacing:.7px; margin-bottom:.3rem; }
+            .kpi-value { font-size:1.4rem; font-weight:700; font-family:monospace; line-height:1; margin-bottom:.2rem; }
+            .kpi-card.pass .kpi-value { color:#22c55e; }
+            .kpi-card.fail .kpi-value { color:var(--danger); }
+            .kpi-target { font-size:.68rem; color:var(--gray); }
+            .kpi-badge { position:absolute; top:.5rem; right:.5rem; font-size:.6rem; font-family:monospace; font-weight:700; padding:.1rem .35rem; border-radius:4px; }
+            .badge-pass { background:#dcfce7; color:#166534; }
+            .badge-fail { background:#fee2e2; color:#991b1b; }
+            .m-detail { border:1px solid #e9ecef; border-radius:8px; margin-bottom:.6rem; overflow:hidden; }
+            .m-detail-hdr { display:flex; justify-content:space-between; align-items:center; padding:.6rem .9rem; background:#f8f9fa; cursor:pointer; font-size:.8rem; font-weight:600; user-select:none; }
+            .m-detail-hdr i { margin-right:.4rem; }
+            .m-detail-body { padding:.75rem .9rem; display:none; font-size:.78rem; }
+            .m-detail-body.open { display:block; }
+            .m-formula { background:#1e1e2e; color:#a6e3a1; font-family:monospace; font-size:.72rem; padding:.5rem .75rem; border-radius:6px; margin-bottom:.6rem; line-height:1.5; }
+            .m-steps { color:#374151; line-height:1.8; margin-bottom:.6rem; }
+            .m-bar-row { display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem; }
+            .m-bar-label { width:65px; font-size:.72rem; color:var(--gray); flex-shrink:0; }
+            .m-bar-track { flex:1; background:#e9ecef; border-radius:3px; height:6px; overflow:hidden; }
+            .m-bar-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+            .m-bar-val { width:38px; text-align:right; font-family:monospace; font-size:.7rem; font-weight:600; }
+            .m-sent-table { width:100%; border-collapse:collapse; font-size:.72rem; }
+            .m-sent-table th { text-align:left; color:var(--gray); padding:.3rem .4rem; border-bottom:1px solid #f1f5f9; font-weight:500; }
+            .m-sent-table td { padding:.3rem .4rem; border-bottom:1px solid #f9fafb; vertical-align:top; }
+            .m-yes { color:#22c55e; font-weight:600; }
+            .m-no  { color:var(--danger); font-weight:600; }
+            .m-spark { display:flex; gap:3px; align-items:flex-end; height:28px; margin-top:.4rem; }
+            .m-spark-bar { flex:1; border-radius:2px 2px 0 0; min-width:6px; }
+            .m-lang-table { width:100%; border-collapse:collapse; font-size:.72rem; }
+            .m-lang-table th { text-align:left; color:var(--gray); padding:.3rem .4rem; border-bottom:1px solid #f1f5f9; font-weight:500; }
+            .m-lang-table td { padding:.3rem .4rem; border-bottom:1px solid #f9fafb; }
+            /* ── END ADDITION 1 ── */
         </style>
     </head>
     <body>
@@ -424,6 +471,134 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- ADDITION 2: Metrics panel — placed after chat-container, before closing </div> of main-content -->
+                <div class="metrics-panel">
+                    <div class="metrics-hdr" onclick="toggleM()">
+                        <h3><span class="m-live-dot"></span> Live Performance Metrics</h3>
+                        <i class="fas fa-chevron-down m-chev" id="m-chev"></i>
+                    </div>
+                    <div class="metrics-body" id="metrics-body">
+
+                        <div class="kpi-row">
+                            <div class="kpi-card" id="kpi-precision">
+                                <div class="kpi-label">Precision@10 vs BM25</div>
+                                <div class="kpi-value" id="kv-precision">—</div>
+                                <div class="kpi-target">target: &gt;30%</div>
+                                <span class="kpi-badge" id="kb-precision"></span>
+                            </div>
+                            <div class="kpi-card" id="kpi-halluc">
+                                <div class="kpi-label">Hallucination Rate</div>
+                                <div class="kpi-value" id="kv-halluc">—</div>
+                                <div class="kpi-target">target: &lt;5%</div>
+                                <span class="kpi-badge" id="kb-halluc"></span>
+                            </div>
+                            <div class="kpi-card" id="kpi-time">
+                                <div class="kpi-label">Response Time</div>
+                                <div class="kpi-value" id="kv-time">—</div>
+                                <div class="kpi-target">target: &lt;3s</div>
+                                <span class="kpi-badge" id="kb-time"></span>
+                            </div>
+                            <div class="kpi-card" id="kpi-lang">
+                                <div class="kpi-label">Lang Detection Acc.</div>
+                                <div class="kpi-value" id="kv-lang">—</div>
+                                <div class="kpi-target">target: &gt;95%</div>
+                                <span class="kpi-badge" id="kb-lang"></span>
+                            </div>
+                        </div>
+
+                        <!-- ① Precision -->
+                        <div class="m-detail">
+                            <div class="m-detail-hdr" onclick="toggleD(this)">
+                                <span><i class="fas fa-bullseye" style="color:#4361ee"></i>Precision@10 — How it's calculated</span>
+                                <i class="fas fa-chevron-down m-chev"></i>
+                            </div>
+                            <div class="m-detail-body">
+                                <div class="m-formula">improvement% = (hybrid_precision − bm25_precision) / bm25_precision × 100</div>
+                                <div class="m-steps">
+                                    <b>Step 1:</b> BM25-only retrieval → top-10 chunks<br>
+                                    <b>Step 2:</b> Cross-encoder scores each as relevance proxy<br>
+                                    <b>Step 3:</b> Same for hybrid pipeline top-10<br>
+                                    <b>Step 4:</b> precision = relevant_count / 10<br>
+                                    <b>Step 5:</b> Compute % improvement over BM25
+                                </div>
+                                <div class="m-bar-row">
+                                    <span class="m-bar-label">BM25 only</span>
+                                    <div class="m-bar-track"><div class="m-bar-fill" id="bar-bm25" style="width:0%;background:#94a3b8"></div></div>
+                                    <span class="m-bar-val" id="bv-bm25">—</span>
+                                </div>
+                                <div class="m-bar-row">
+                                    <span class="m-bar-label">Hybrid</span>
+                                    <div class="m-bar-track"><div class="m-bar-fill" id="bar-hybrid" style="width:0%;background:#4361ee"></div></div>
+                                    <span class="m-bar-val" id="bv-hybrid">—</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ② Hallucination -->
+                        <div class="m-detail">
+                            <div class="m-detail-hdr" onclick="toggleD(this)">
+                                <span><i class="fas fa-shield-alt" style="color:#f8961e"></i>Hallucination Rate — How it's calculated</span>
+                                <i class="fas fa-chevron-down m-chev"></i>
+                            </div>
+                            <div class="m-detail-body">
+                                <div class="m-formula">rate% = hallucinated_sentences / total_sentences × 100</div>
+                                <div class="m-steps">
+                                    <b>Step 1:</b> Split LLM response into sentences<br>
+                                    <b>Step 2:</b> Embed each + retrieved chunks (SentenceTransformer)<br>
+                                    <b>Step 3:</b> max cosine-similarity(sentence, chunks)<br>
+                                    <b>Step 4:</b> sim &lt; 0.35 → not grounded → hallucinated
+                                </div>
+                                <div id="halluc-stats" style="color:var(--gray);margin-bottom:.5rem;">Send a message to see results.</div>
+                                <table class="m-sent-table">
+                                    <thead><tr><th>Sentence</th><th>Max Sim</th><th>Grounded</th></tr></thead>
+                                    <tbody id="sent-tbody"><tr><td colspan="3" style="color:var(--gray);text-align:center">—</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- ③ Response Time -->
+                        <div class="m-detail">
+                            <div class="m-detail-hdr" onclick="toggleD(this)">
+                                <span><i class="fas fa-stopwatch" style="color:#22c55e"></i>Response Time — How it's calculated</span>
+                                <i class="fas fa-chevron-down m-chev"></i>
+                            </div>
+                            <div class="m-detail-body">
+                                <div class="m-formula">elapsed = time.time() after pipeline − time.time() before pipeline</div>
+                                <div class="m-steps">
+                                    Timer wraps: vector search + BM25 + cross-encoder rerank + Groq LLM.<br>
+                                    Rolling average tracked over last 20 requests.
+                                </div>
+                                <div id="time-stats" style="color:var(--gray);font-family:monospace;font-size:.78rem;margin-bottom:.5rem;">—</div>
+                                <div style="font-size:.7rem;color:var(--gray);margin-bottom:.3rem;">Last 10 requests (seconds)</div>
+                                <div class="m-spark" id="spark-bars"><span style="color:var(--gray);font-size:.7rem">No data yet</span></div>
+                            </div>
+                        </div>
+
+                        <!-- ④ Language Accuracy -->
+                        <div class="m-detail">
+                            <div class="m-detail-hdr" onclick="toggleD(this)">
+                                <span><i class="fas fa-language" style="color:#4361ee"></i>Language Detection Accuracy — How it's calculated</span>
+                                <i class="fas fa-chevron-down m-chev"></i>
+                            </div>
+                            <div class="m-detail-body">
+                                <div class="m-formula">accuracy% = correct_detections / 30 labelled sentences × 100</div>
+                                <div class="m-steps">
+                                    30 hand-labelled sentences (3 × 10 languages) run through <code>langdetect.detect()</code> at startup.<br>
+                                    Result cached — does not re-run on every request.
+                                </div>
+                                <div id="lang-stats" style="color:var(--gray);margin-bottom:.5rem;">Loading…</div>
+                                <table class="m-lang-table">
+                                    <thead><tr><th>Sentence</th><th>Expected</th><th>Got</th><th>✓</th></tr></thead>
+                                    <tbody id="lang-tbody"><tr><td colspan="4" style="color:var(--gray);text-align:center">Loading…</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- END ADDITION 2 -->
+
             </div>
         </div>
 
@@ -524,6 +699,7 @@
 
 
                 addMessage(aiText + debugHTML, 'ai');
+                if (res.data.metrics) renderMetrics(res.data.metrics); // ADDITION 3: one line added here
             })
             .catch(err=>{
                 hideTypingIndicator();
@@ -603,6 +779,88 @@
 
     });
     </script>
+
+    <!-- ADDITION 3 cont.: metrics functions in a separate script block, zero changes to existing script above -->
+    <script>
+    function toggleM() {
+        const b = document.getElementById('metrics-body');
+        const c = document.getElementById('m-chev');
+        b.classList.toggle('open'); c.classList.toggle('open');
+    }
+    function toggleD(hdr) {
+        hdr.nextElementSibling.classList.toggle('open');
+        hdr.querySelector('.m-chev').classList.toggle('open');
+    }
+    function setKPI(cardId, valId, badgeId, displayVal, pass) {
+        document.getElementById(cardId).className = 'kpi-card ' + (pass ? 'pass' : 'fail');
+        document.getElementById(valId).textContent = displayVal;
+        const b = document.getElementById(badgeId);
+        b.textContent = pass ? '✓ PASS' : '✗ FAIL';
+        b.className = 'kpi-badge ' + (pass ? 'badge-pass' : 'badge-fail');
+    }
+    function renderMetrics(m) {
+        const body = document.getElementById('metrics-body');
+        if (!body.classList.contains('open')) toggleM();
+        renderPrecision(m.precision);
+        renderHallucination(m.hallucination);
+        renderResponseTime(m.response_time);
+        renderLanguage(m.language);
+    }
+    function renderPrecision(p) {
+        setKPI('kpi-precision','kv-precision','kb-precision', p.improvement_pct+'%', p.meets_target);
+        document.getElementById('bar-bm25').style.width   = Math.min(p.bm25_precision,100)+'%';
+        document.getElementById('bar-hybrid').style.width = Math.min(p.hybrid_precision,100)+'%';
+        document.getElementById('bv-bm25').textContent    = p.bm25_precision+'%';
+        document.getElementById('bv-hybrid').textContent  = p.hybrid_precision+'%';
+    }
+    function renderHallucination(h) {
+        setKPI('kpi-halluc','kv-halluc','kb-halluc', h.hallucination_rate+'%', h.meets_target);
+        document.getElementById('halluc-stats').innerHTML =
+            `<span style="color:#22c55e">✓ ${h.grounded} grounded</span> &nbsp;` +
+            `<span style="color:var(--danger)">✗ ${h.hallucinated} hallucinated</span> &nbsp;` +
+            `<span style="color:var(--gray)">(${h.total_sentences} sentences, threshold ${h.threshold})</span>`;
+        const tbody = document.getElementById('sent-tbody');
+        if (!h.details || !h.details.length) { tbody.innerHTML='<tr><td colspan="3" style="color:var(--gray);text-align:center">—</td></tr>'; return; }
+        tbody.innerHTML = h.details.map(d =>
+            `<tr>
+                <td style="max-width:200px;word-break:break-word">${d.sentence}</td>
+                <td style="font-family:monospace">${d.max_sim.toFixed(3)}</td>
+                <td class="${d.grounded?'m-yes':'m-no'}">${d.grounded?'YES':'NO'}</td>
+            </tr>`).join('');
+    }
+    function renderResponseTime(rt) {
+        setKPI('kpi-time','kv-time','kb-time', rt.last_s+'s', rt.meets_target);
+        document.getElementById('time-stats').textContent =
+            `Last: ${rt.last_s}s  Avg: ${rt.avg_s}s  Min: ${rt.min_s}s  Max: ${rt.max_s}s  (${rt.samples} samples)`;
+        const wrap = document.getElementById('spark-bars');
+        const hist = rt.history || [];
+        if (!hist.length) { wrap.innerHTML='<span style="color:var(--gray);font-size:.7rem">No data yet</span>'; return; }
+        const maxV = Math.max(...hist, rt.target_s);
+        wrap.innerHTML = hist.map(v => {
+            const h = Math.max(3, Math.round((v/maxV)*28));
+            return `<div class="m-spark-bar" title="${v}s" style="height:${h}px;background:${v<=rt.target_s?'#22c55e':'var(--danger)'}"></div>`;
+        }).join('');
+    }
+    function renderLanguage(la) {
+        setKPI('kpi-lang','kv-lang','kb-lang', la.accuracy_pct+'%', la.meets_target);
+        document.getElementById('lang-stats').textContent =
+            `${la.correct||'?'}/${la.total} correct` + (la.cached?' (cached from startup)':'');
+        if (la.rows) {
+            document.getElementById('lang-tbody').innerHTML = la.rows.map(r =>
+                `<tr>
+                    <td style="max-width:150px;word-break:break-word">${r.text}</td>
+                    <td style="font-family:monospace">${r.expected}</td>
+                    <td style="font-family:monospace">${r.detected}</td>
+                    <td class="${r.correct?'m-yes':'m-no'}">${r.correct?'✓':'✗'}</td>
+                </tr>`).join('');
+        }
+    }
+    // Load language accuracy on page open (cached from startup)
+    axios.get('/metrics').then(res => {
+        if (res.data.language) renderLanguage(res.data.language);
+    }).catch(()=>{});
+    </script>
+    <!-- END ADDITION 3 -->
 
     </body>
     </html>

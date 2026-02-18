@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import os
+import time                          # ← CHANGE 1: added for response timer
 import logging
 import PyPDF2
 import docx
@@ -23,6 +24,7 @@ from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
 from langdetect import detect
 import speech_recognition as sr
+from metrics import evaluate_request, get_history, compute_language_accuracy  # ← CHANGE 2: import metrics
 
 # Load environment variables from .env file
 load_dotenv()
@@ -489,6 +491,7 @@ def upload_file():
         
         return jsonify({"message": "File uploaded and processed successfully", "text": text, "embeddings": embeddings}), 200
 
+# ← CHANGE 3: /chat now times the pipeline and appends metrics to the response
 @app.route('/chat', methods=['POST'])
 def chat():
     user_question = request.json['message']
@@ -499,6 +502,8 @@ def chat():
     # rewrite query (optional but useful for retrieval)
     rewritten_query, _ = rewrite_query(client, model, user_question, [])
 
+    t0 = time.time()  # start timer
+
     # retrieve chunks
     relevant_chunks, debug_data = improved_get_relevant_chunks(
         rewritten_query, docsearch, chunks
@@ -507,13 +512,36 @@ def chat():
     # generate response (NO history)
     response = chatbot_response(client, model, user_question, relevant_chunks, [])
 
+    elapsed = time.time() - t0  # stop timer
+
+    # calculate metrics
+    metrics = evaluate_request(
+        query=rewritten_query,
+        all_chunks=chunks,
+        hybrid_top=relevant_chunks,
+        response_text=response,
+        elapsed_s=elapsed
+    )
+
     # translate back
 
     return jsonify({
         "response": response,
         "rewritten_query": rewritten_query,
         "retrieved_chunks": relevant_chunks,
-        "retrieval_debug": debug_data
+        "retrieval_debug": debug_data,
+        "metrics": metrics   # ← metrics added to existing response
+    })
+
+
+# ← CHANGE 4: new /metrics endpoint so the dashboard can poll on page load
+@app.route('/metrics', methods=['GET'])
+def get_metrics():
+    from metrics import compute_response_time_stats, get_language_accuracy
+    return jsonify({
+        "response_time": compute_response_time_stats(),
+        "language":      get_language_accuracy(),
+        "history":       get_history(),
     })
 
 
@@ -538,5 +566,7 @@ if __name__ == "__main__":
         logger.info(f"Created new Pinecone index: {pinecone_index_name}")
 
     index = pc.Index(pinecone_index_name)
+
+    compute_language_accuracy()  # pre-cache language accuracy at startup
 
     app.run(debug=True)
