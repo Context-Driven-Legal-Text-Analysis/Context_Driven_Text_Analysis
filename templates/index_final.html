@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuAI - Intelligent Document Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #f72585;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f5f7fb; color: var(--dark); line-height: 1.6; }
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 1.5rem; display: flex; flex-direction: column; border-right: 1px solid #e9ecef; }
+        .logo { display: flex; align-items: center; margin-bottom: 2rem; font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+        .logo i { margin-right: 0.75rem; font-size: 1.5rem; }
+        .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; color: var(--gray); text-decoration: none; transition: all 0.2s ease; }
+        .nav-item:hover { background-color: #f1f3ff; color: var(--primary); }
+        .nav-item.active { background-color: #e6f0ff; color: var(--primary); font-weight: 500; }
+        .nav-item i { margin-right: 0.75rem; font-size: 1.1rem; }
+        .upload-section { margin-top: auto; padding: 1rem; background-color: #f8f9fa; border-radius: 12px; border: 1px dashed #dee2e6; text-align: center; }
+        .upload-btn { display: inline-flex; align-items: center; background-color: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; margin-top: 1rem; }
+        .upload-btn:hover { background-color: var(--primary-dark); }
+        .upload-btn i { margin-right: 0.5rem; }
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 1.75rem; font-weight: 600; color: var(--dark); }
+        .user-controls { display: flex; align-items: center; gap: 1rem; }
+        .language-selector { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #dee2e6; background-color: white; font-family: inherit; }
+        .lang-badge { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 12px; background: #e6f0ff; color: var(--primary); font-weight: 600; display: none; }
+        .voice-btn { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .voice-btn:hover { background-color: var(--primary-dark); }
+        .voice-btn.recording { animation: pulse 1.5s infinite; background-color: var(--danger); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(247,37,133,0.7); } 70% { box-shadow: 0 0 0 10px rgba(247,37,133,0); } 100% { box-shadow: 0 0 0 0 rgba(247,37,133,0); } }
+        .chat-container { flex: 1; display: flex; flex-direction: column; background-color: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); overflow: hidden; }
+        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        .message { max-width: 80%; padding: 1rem 1.25rem; border-radius: 12px; line-height: 1.5; position: relative; }
+        .user-message { align-self: flex-end; background-color: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .ai-message { align-self: flex-start; background-color: #f8f9fa; color: var(--dark); border-bottom-left-radius: 4px; }
+        .message-time { font-size: 0.75rem; opacity: 0.7; margin-top: 0.5rem; display: block; }
+        .input-container { padding: 1rem; border-top: 1px solid #e9ecef; display: flex; gap: 0.75rem; background-color: white; }
+        .message-input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #dee2e6; border-radius: 8px; font-family: inherit; resize: none; height: 50px; max-height: 150px; transition: all 0.2s ease; }
+        .message-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67,97,238,0.1); }
+        .send-btn { width: 50px; height: 50px; border-radius: 8px; background-color: var(--primary); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .send-btn:hover { background-color: var(--primary-dark); }
+        .file-upload { display: none; }
+        .typing-indicator { display: flex; align-items: center; gap: 0.5rem; padding: 1rem; color: var(--gray); font-size: 0.9rem; }
+        @media (max-width: 768px) { .app-container { flex-direction: column; } .sidebar { width: 100%; padding: 1rem; } .main-content { padding: 1rem; } .message { max-width: 90%; } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <span>DocuAI</span>
+            </div>
+            <a href="#" class="nav-item active"><i class="fas fa-comments"></i><span>Chat</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-file-alt"></i><span>Documents</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-history"></i><span>History</span></a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+            <div class="upload-section">
+                <p>Upload documents to analyze</p>
+                <label for="file-upload" class="upload-btn">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload File</span>
+                </label>
+                <input type="file" id="file-upload" class="file-upload" accept=".pdf,.docx,.pptx,.txt">
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1>Document Assistant</h1>
+                <div class="user-controls">
+                    <!--
+                        The language selector now controls TWO things:
+                        1. The language the AI's response is translated into
+                        2. The language that voice input is displayed/sent in
+                    -->
+                    <select class="language-selector" id="language-selector">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                        <option value="zh-CN">Chinese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ar">Arabic</option>
+                        <option value="ta">Tamil</option>
+                        <option value="hi">Hindi</option>
+                    </select>
+                    <!-- Shows the active output language as a small badge -->
+                    <span class="lang-badge" id="lang-badge"></span>
+                    <button class="voice-btn" id="voice-btn" title="Click to speak">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message ai-message">
+                        Hello! I'm your Document AI Assistant. Upload a document or ask me anything about your files.
+                        <span class="message-time">Just now</span>
+                    </div>
+                </div>
+                <div class="input-container">
+                    <textarea class="message-input" id="message-input" placeholder="Ask about your documents..." rows="1"></textarea>
+                    <button class="send-btn" id="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const messageInput   = document.getElementById('message-input');
+        const sendBtn        = document.getElementById('send-btn');
+        const chatMessages   = document.getElementById('chat-messages');
+        const fileUpload     = document.getElementById('file-upload');
+        const voiceBtn       = document.getElementById('voice-btn');
+        const langSelector   = document.getElementById('language-selector');
+        const langBadge      = document.getElementById('lang-badge');
+
+        let isRecording = false;
+
+        // ── helpers ────────────────────────────────────────────────
+        function getTargetLang() {
+            return langSelector.value;   // always read live value
+        }
+
+        function updateLangBadge() {
+            const lang = getTargetLang();
+            if (lang === 'en') {
+                langBadge.style.display = 'none';
+            } else {
+                langBadge.textContent = langSelector.options[langSelector.selectedIndex].text;
+                langBadge.style.display = 'inline';
+            }
+        }
+
+        // ── events ─────────────────────────────────────────────────
+        langSelector.addEventListener('change', updateLangBadge);
+        updateLangBadge();
+
+        messageInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        fileUpload.addEventListener('change', e => { if (e.target.files[0]) uploadFile(e.target.files[0]); });
+        voiceBtn.addEventListener('click', toggleRecording);
+
+        // ── sendMessage ────────────────────────────────────────────
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            messageInput.style.height = '50px';
+            showTypingIndicator();
+
+            axios.post('/chat', {
+                message: message,
+                target_lang: getTargetLang()   // ← always send chosen language
+            })
+            .then(res => {
+                hideTypingIndicator();
+                const { response, rewritten_query, retrieved_chunks, retrieval_debug: dbg } = res.data;
+
+                const debugHTML = `
+                <div style="margin-top:12px;padding:12px;background:#eef2ff;border-radius:10px;font-size:13px">
+                    <b>Search Query Used:</b><br>${rewritten_query}<br><br>
+                    <b>Query Tokens:</b><br>${(dbg.query_tokens || []).join(', ')}<br><br>
+                    <b>Vector Matches:</b><br>
+                    ${(dbg.vector_search_matches || []).map(c => `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">${c}</div>`).join('')}
+                    <br><b>BM25 Ranking:</b><br>
+                    ${(dbg.bm25_matches || []).map(m => `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">Score: ${m.bm25_score}<br>${m.chunk_preview}</div>`).join('')}
+                    <br><b>Cross-Encoder Rerank:</b><br>
+                    ${(dbg.cross_encoder_scores || []).map(m => `<div style="margin-bottom:6px;padding:6px;background:white;border-radius:6px">Score: ${m.cross_score}<br>${m.chunk_preview}</div>`).join('')}
+                    <br><b>Final Selected Chunks:</b><br>
+                    ${(dbg.final_selected_chunks || []).map(c => `<div style="margin-bottom:6px;padding:6px;background:#dbeafe;border-radius:6px">${c}</div>`).join('')}
+                </div>`;
+
+                addMessage(response + debugHTML, 'ai');
+            })
+            .catch(err => {
+                hideTypingIndicator();
+                addMessage('Error generating response. Please try again.', 'ai');
+                console.error(err);
+            });
+        }
+
+        // ── uploadFile ─────────────────────────────────────────────
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            addMessage(`Uploading ${file.name}…`, 'ai');
+            axios.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+                .then(() => addMessage(`✅ ${file.name} indexed. You can now ask questions about it.`, 'ai'))
+                .catch(() => addMessage(`❌ Upload failed for ${file.name}.`, 'ai'));
+        }
+
+        // ── voice recording ────────────────────────────────────────
+        function toggleRecording() {
+            if (isRecording) {
+                // stop
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                axios.post('/stop_recording');
+            } else {
+                // start
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+
+                axios.post('/start_recording', { language: getTargetLang() })
+                    .then(res => {
+                        if (res.data.success) {
+                            /*
+                             * FIX: use display_text (translated to user's chosen language)
+                             * for the input box so the user can see/edit it,
+                             * but sendMessage() will send that value + target_lang
+                             * so the backend still retrieves in English internally.
+                             *
+                             * If you want the input box to stay in English, swap
+                             * display_text → res.data.text below.
+                             */
+                            messageInput.value = res.data.display_text || res.data.text;
+                            messageInput.style.height = 'auto';
+                            messageInput.style.height = messageInput.scrollHeight + 'px';
+                        }
+                        resetMic();
+                    })
+                    .catch(err => {
+                        console.error('Recording error:', err);
+                        addMessage('Could not capture audio. Please try again.', 'ai');
+                        resetMic();
+                    });
+            }
+        }
+
+        function resetMic() {
+            isRecording = false;
+            voiceBtn.classList.remove('recording');
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        }
+
+        // ── UI helpers ─────────────────────────────────────────────
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}-message`;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            div.innerHTML = `${text}<span class="message-time">${time}</span>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const t = document.createElement('div');
+            t.className = 'typing-indicator';
+            t.id = 'typing-indicator';
+            t.textContent = 'DocuAI is thinking…';
+            chatMessages.appendChild(t);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const t = document.getElementById('typing-indicator');
+            if (t) t.remove();
+        }
+    });
+    </script>
+</body>
+</html>
