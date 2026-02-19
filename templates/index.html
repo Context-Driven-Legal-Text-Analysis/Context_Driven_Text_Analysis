@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DocuAI - Intelligent Document Assistant</title>
+        <title>ContextAi</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
@@ -403,7 +403,7 @@
             <div class="sidebar">
                 <div class="logo">
                     <i class="fas fa-robot"></i>
-                    <span>DocuAI</span>
+                    <span>ContextAi</span>
                 </div>
                 
                 <a href="#" class="nav-item active">
@@ -459,7 +459,7 @@
                     <div class="chat-messages" id="chat-messages">
                         <!-- Messages will be inserted here -->
                         <div class="message ai-message">
-                            Hello! I'm your Document AI Assistant. Upload a document or ask me anything about your files.
+                            Hello! I'm your Context AI Assistant. Upload a document or ask me anything about your files.
                             <span class="message-time">Just now</span>
                         </div>
                     </div>
@@ -767,7 +767,7 @@
             const t = document.createElement('div');
             t.className='typing-indicator';
             t.id='typing-indicator';
-            t.innerHTML=`DocuAI thinking...`;
+            t.innerHTML=`ContextAi thinking...`;
             chatMessages.appendChild(t);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

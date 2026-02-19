@@ -315,33 +315,34 @@ def query_vectors(index, vector, top_k=2, namespace="default", filter=None):
     return response
 
 def rewrite_query(client, model, original_query, rewrite_conversation_history):
-    system_prompt = '''
-    You are a document analysis assistant.Use ONLY the provided document chunks to answer.Extract and summarize relevant information from them.
-If information exists but is scattered across chunks,
-combine and present it clearly.Only say "Not found in document" if the chunks contain
-absolutely no relevant information.
-    '''
+
+    system_prompt = """
+You are a search query optimizer for a document retrieval system.
+
+Rewrite the user's question into a short, clear semantic search query
+that will help retrieve relevant document chunks from a vector database.
+
+STRICT RULES:
+- Do NOT answer the question
+- Do NOT mention missing documents
+- Do NOT explain anything
+- Output ONLY the rewritten search query
+- Keep it concise and keyword-rich
+"""
 
     messages = [
         {"role": "system", "content": system_prompt},
-        *rewrite_conversation_history,
-        {"role": "user", "content": f"Original query: {original_query}\n\nRewritten query:"}
+        {"role": "user", "content": original_query}
     ]
 
     response = client.chat.completions.create(
         model=model,
         messages=messages,
-        max_tokens=200,
-        temperature=0.3
+        max_tokens=60,
+        temperature=0.1
     )
 
-    rewritten_query = response.choices[0].message.content
-    
-    rewrite_conversation_history.append({"role": "user", "content": original_query})
-    rewrite_conversation_history.append({"role": "assistant", "content": rewritten_query})
-
-    if len(rewrite_conversation_history) > 20:
-        rewrite_conversation_history = rewrite_conversation_history[-20:]
+    rewritten_query = response.choices[0].message.content.strip()
 
     return rewritten_query, rewrite_conversation_history
 
