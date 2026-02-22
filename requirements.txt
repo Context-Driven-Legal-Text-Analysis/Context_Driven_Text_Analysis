@@ -18,4 +18,3 @@ deep-translator
 langdetect
 SpeechRecognition
 python -m spacy download en_core_web_sm
-en-core-web-sm
