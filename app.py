@@ -15,7 +15,7 @@ from typing import List, Dict, Any
 from groq import Groq
 from pinecone import Pinecone, ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
-from rank_bm25 import BM25Okapi
+from rank_bm25 import BM25Plus
 from sentence_transformers import CrossEncoder
 import numpy as np
 from openai import OpenAI
@@ -91,7 +91,7 @@ def improved_get_relevant_chunks(user_question: str, docsearch: PineconeVectorSt
     debug_data["vector_search_matches"] = vector_chunks
 
     # ===== BM25 search =====
-    bm25 = BM25Okapi([doc.split() for doc in chunks])
+    bm25 = BM25Plus([doc.split() for doc in chunks])
     bm25_scores = bm25.get_scores(tokenized_query)
     top_bm25_indices = np.argsort(bm25_scores)[-top_k * 2:][::-1]
 
